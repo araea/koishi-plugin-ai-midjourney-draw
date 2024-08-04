@@ -324,21 +324,21 @@ Assistant: `);
       if (imageUrls.length > 5) {
         imageUrls = imageUrls.slice(0, 5);
       }
-      const base64Array = imageUrls.map(url => `data:image/jpeg;base64,${getImageBase64(url)}`);
+      const base64Array: string[] = await convertUrlsToBase64(imageUrls);
       const taskId = await submitTask('blend', {
-        botType: "MID_JOURNEY",
-        prompt: "",
-        base64Array: base64Array,
-        accountFilter: {
-          instanceId: "",
-          channelId: "",
-          remark: "",
-          modes: [],
-          remix: false,
-          remixAutoConsidered: false
+        "botType": "MID_JOURNEY",
+        "base64Array": base64Array,
+        "dimensions": "SQUARE",
+        "accountFilter": {
+          "instanceId": "",
+          "channelId": "",
+          "remark": "",
+          "modes": [],
+          "remix": false,
+          "remixAutoConsidered": false
         },
-        notifyHook: "",
-        state: ""
+        "notifyHook": "",
+        "state": ""
       });
       await sendMessage(session, `已提交合并图片任务，请耐心等待。`);
       const result = await pollTaskResult(taskId);
@@ -516,6 +516,15 @@ Assistant: `);
     })
 
   // hs*
+  async function convertUrlToBase64(url: string): Promise<string> {
+    const base64 = await getImageBase64(url);
+    return `data:image/jpeg;base64,${base64}`;
+  }
+
+  async function convertUrlsToBase64(ossUrls: string[]): Promise<string[]> {
+    return Promise.all(ossUrls.map(convertUrlToBase64));
+  }
+
   async function fetchCompletions(text) {
     const url = 'https://sourcegraph.com/.api/graphql';
     const token = "sgp_a0d7ccb4f752ea73_62464a2e9174c0d45f46f9885c742f5b53510030";
@@ -681,6 +690,15 @@ Assistant: `);
         }
 
         const result = await fetchTaskResult(taskId);
+
+        if (result.code === 500 || result.msg === '任务超时。如涉及垫图/反推等与图片相关的操作，请优先使用平台的上传图片功能，使用外链图片可能会造成任务失败。') {
+          logger.error('Task timed out due to image processing issues');
+          return {
+            status: 'FAILURE',
+            failReason: '任务超时。可能是因为图片处理问题，建议使用平台的上传图片功能。'
+          };
+        }
+
         if (result.status === 'SUCCESS' || result.status === 'FAILURE') {
           return result;
         }
