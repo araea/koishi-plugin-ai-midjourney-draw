@@ -674,7 +674,6 @@ Assistant: `);
     while (true) {
       try {
         const result = await fetchTaskResult(taskId);
-        console.info(result);
         if (result.status === 'SUCCESS' || result.status === 'FAILURE') {
           return result;
         }
