@@ -57,6 +57,7 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 | `aiMidjourney.图片转提示词`                 | 图片转提示词                     |
 | `aiMidjourney.放大 <taskId> <customId>` | 放大图片 (此命令由插件自动调用，无需手动输入)   |
 | `aiMidjourney.绘图 <prompt>`            | 绘一张图                       |
+| `aiMidjourney.图片转链接`            | 图片转链接                       |
 
 ## 🌸 测试图
 

@@ -48,6 +48,7 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 | \`aiMidjourney.图片转提示词\`                 | 图片转提示词                     |
 | \`aiMidjourney.放大 <taskId> <customId>\` | 放大图片 (此命令由插件自动调用，无需手动输入)   |
 | \`aiMidjourney.绘图 <prompt>\`            | 绘一张图                       |
+| \`aiMidjourney.图片转链接\`            | 图片转链接                       |
 `
 
 export interface Config {
@@ -387,7 +388,12 @@ Assistant: `);
   // tpztsc* ms*
   ctx.command('aiMidjourney.图片转提示词', '图片转提示词')
     .action(async ({session}) => {
-      const imageUrl = getFirstImageUrl(session.event.message.elements);
+      let imageUrl = '';
+      if (session.event.message.quote && session.event.message.quote.elements) {
+        imageUrl = getFirstImageUrl(session.event.message.quote.elements);
+      } else {
+        imageUrl = getFirstImageUrl(session.event.message.elements);
+      }
       if (!imageUrl) {
         await sendMessage(session, '未找到图片。');
         return;
@@ -415,6 +421,22 @@ Assistant: `);
         await sendMessage(session, `${result.failReason}`);
         return
       }
+    })
+  // tpzurl* zlj*
+  ctx.command('aiMidjourney.图片转链接', '图片转链接')
+    .action(async ({session}) => {
+      let imageUrls = [];
+      if (session.event.message.quote && session.event.message.quote.elements) {
+        imageUrls = getImageUrls(session.event.message.quote.elements);
+      } else {
+        imageUrls = getImageUrls(session.event.message.elements);
+      }
+      if (imageUrls.length === 0) {
+        await sendMessage(session, '未找到图片。');
+        return;
+      }
+      const ossUrls = await processImageUrls(imageUrls);
+      await sendMessage(session, `${ossUrls.join('\n\n')}`);
     })
   // fd*
   ctx.command('aiMidjourney.放大 <taskId:string> <customId:string>', '放大图片', {hidden: true})
