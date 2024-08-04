@@ -1,6 +1,6 @@
 {
   "name": "koishi-plugin-ai-midjourney-draw",
-  "description": "",
+  "description": "无需科学上网环境，25 元/月 Midjourney 无限绘图。自带提示词生成器、英译中、提示词辅助工具、合并图片、缩短提示词、图片转提示词等功能。",
   "version": "0.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -8,14 +8,29 @@
     "lib",
     "dist"
   ],
+  "koishi": {
+    "service": {
+      "required": [
+        "database"
+      ]
+    }
+  },
   "license": "MIT",
-  "scripts": {},
+  "author": "Nawyjx <3373167460@qq.com>",
+  "homepage": "https://www.npmjs.com/package/koishi-plugin-ai-midjourney-draw?activeTab=readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/araea/koishi-plugin-ai-midjourney-draw.git"
+  },
   "keywords": [
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "ai",
+    "midjourney",
+    "draw",
+    "绘图"
   ],
-  "devDependencies": {},
   "peerDependencies": {
     "koishi": "^4.17.10"
   }
