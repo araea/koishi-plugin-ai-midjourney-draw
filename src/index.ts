@@ -671,14 +671,25 @@ Assistant: `);
   }
 
   async function pollTaskResult(taskId: string): Promise<any> {
+    const startTime = Date.now();
+    const timeoutDuration = 10 * 60 * 1000;
+
     while (true) {
       try {
+        if (Date.now() - startTime > timeoutDuration) {
+          throw new Error('Polling timed out after 10 minutes');
+        }
+
         const result = await fetchTaskResult(taskId);
         if (result.status === 'SUCCESS' || result.status === 'FAILURE') {
           return result;
         }
         await new Promise(resolve => setTimeout(resolve, 5000));
       } catch (error) {
+        if (error instanceof Error && error.message === 'Polling timed out after 10 minutes') {
+          logger.error('Polling timed out after 10 minutes');
+          return {status: 'FAILURE', failReason: '任务超时'};
+        }
         logger.error('Error fetching task result:', error);
       }
     }
