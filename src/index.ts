@@ -29,9 +29,10 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 
 ## ⚙️ 配置项
 
-| 配置项             | 类型     | 描述                       |
-|-----------------|--------|--------------------------|
-| \`authorization\` | string | **必填**。aiMidjourney 授权码。 |
+| 配置项             | 类型      | 描述                       |
+|-----------------|---------|--------------------------|
+| \`authorization\` | string  | **必填**。aiMidjourney 授权码。 |
+| \`autoTranslate\` | boolean | 是否自动翻译提示词。默认为 \`false\`。   |
 
 ## 🌼 指令
 
@@ -48,15 +49,18 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 | \`aiMidjourney.图片转提示词\`                 | 图片转提示词                     |
 | \`aiMidjourney.放大 <taskId> <customId>\` | 放大图片 (此命令由插件自动调用，无需手动输入)   |
 | \`aiMidjourney.绘图 <prompt>\`            | 绘一张图                       |
-| \`aiMidjourney.图片转链接\`            | 图片转链接                       |
+| \`aiMidjourney.图片转链接\`                  | 图片转链接                      |
+
 `
 
 export interface Config {
   authorization: string
+  autoTranslate: boolean
 }
 
 export const Config: Schema<Config> = Schema.object({
   authorization: Schema.string().required().description('aiMidjourney 授权码。'),
+  autoTranslate: Schema.boolean().default(false).description('是否自动将中文提示词翻译成英文。'),
 })
 
 // smb*
@@ -249,30 +253,7 @@ export function apply(ctx: Context, config: Config) {
         await sendMessage(session, `缺少翻译文本。`);
         return
       }
-      const json = {
-        "role": "Expert Chinese to English Translator",
-        "task": "Translate Chinese text to natural, fluent English",
-        "instructions": [
-          "Maintain original tone and style",
-          "Adapt idioms and expressions",
-          "Preserve cultural nuances",
-          "Use brief parenthetical explanations if needed",
-          "Consider context for words with multiple meanings",
-          "Use appropriate colloquialisms when present in source",
-          "Ensure grammatical correctness and natural flow",
-          "Adapt wordplay to maintain original spirit",
-          "Use gender-neutral pronouns for animals unless specified"
-        ],
-        "input": {
-          "chinese_text": text
-        },
-        "output_format": {
-          "english_translation": "String containing only the translated text"
-        },
-        "notes": "Exclude additional explanations or meta-commentary in the output. Output the JSON object in English only. Only JSON object, no additional text."
-      }
-      const result = await fetchCompletions(JSON.stringify(json));
-      await sendMessage(session, `${parseOutputResultToGetEnglishTranslation(result)}`);
+      await sendMessage(session, `${await translateChineseToEnglish(text)}`);
     })
   // fy* yyz*
   ctx.command('aiMidjourney.英译中 <prompt:text>', '翻译英文到中文')
@@ -445,19 +426,35 @@ export function apply(ctx: Context, config: Config) {
   ctx.command('aiMidjourney.绘图 <prompt:text>', '绘一张图')
     .action(async ({session}, prompt) => {
       let ossUrls = []
-      const imageUrls = getImageUrls(session.event.message.elements);
+      let imageUrls = getImageUrls(session.event.message.elements);
       if (imageUrls.length > 0) {
         ossUrls = await processImageUrls(imageUrls);
+      } else if (session.event.message.quote && session.event.message.quote.elements) {
+        imageUrls = getImageUrls(session.event.message.quote.elements);
+        if (imageUrls.length > 0) {
+          ossUrls = await processImageUrls(imageUrls);
+        }
       }
       prompt = `${h.select(prompt, 'text')}`;
       if (!prompt) {
-        await sendMessage(session, `缺少绘图提示词。`);
-        return
+        if (session.event.message.quote && session.event.message.quote.elements) {
+          prompt = `${h.select(session.event.message.quote.elements, 'text')}`;
+        }
+        if (!prompt) {
+          await sendMessage(session, `缺少绘图提示词。`);
+          return
+        }
       }
       if (prompt.includes('--repeat') || prompt.includes('--r')) {
         await sendMessage(session, '不支持 --repeat 或 --r 参数。')
         return
       }
+      if (config.autoTranslate) {
+        const parsePromptResult = parsePrompt(prompt);
+        const translatedPrompt = await translateChineseToEnglish(parsePromptResult.prompt);
+        prompt = `${translatedPrompt} ${parsePromptResult.params}`;
+      }
+
       prompt = ossUrls.length > 0 ? `${ossUrls.join(' ')} ${prompt}` : prompt;
       try {
         const taskId = await submitTask('imagine', {
@@ -496,6 +493,62 @@ export function apply(ctx: Context, config: Config) {
     })
 
   // hs*
+  async function translateChineseToEnglish(text: string): Promise<string> {
+    const json = {
+      "role": "Expert Chinese to English Translator",
+      "task": "Translate Chinese text to natural, fluent English",
+      "instructions": [
+        "Maintain original tone and style",
+        "Adapt idioms and expressions",
+        "Preserve cultural nuances",
+        "Use brief parenthetical explanations if needed",
+        "Consider context for words with multiple meanings",
+        "Use appropriate colloquialisms when present in source",
+        "Ensure grammatical correctness and natural flow",
+        "Adapt wordplay to maintain original spirit",
+        "Use gender-neutral pronouns for animals unless specified"
+      ],
+      "input": {
+        "chinese_text": text
+      },
+      "output_format": "JSON",
+      "output_structure": {
+        "english_translation": "String containing only the translated text"
+      },
+      "notes": "Exclude additional explanations or meta-commentary in the output. Output the JSON object in English only. Only JSON object, no additional text."
+    };
+
+    try {
+      const result = await fetchCompletions(JSON.stringify(json));
+      return parseOutputResultToGetEnglishTranslation(result);
+    } catch (error) {
+      logger.error('Translation error:', error);
+      return 'Translation failed.';
+    }
+  }
+
+  function parsePrompt(prompt: string): { prompt: string; params: string } {
+    if (typeof prompt !== 'string') {
+      throw new Error('Input must be a string');
+    }
+
+    const lastParamIndex = prompt.lastIndexOf('--');
+
+    if (lastParamIndex === -1) {
+      return { prompt: prompt.trim(), params: '' };
+    }
+
+    // 检查 "--" 是否在字符串的开头
+    if (lastParamIndex === 0) {
+      return { prompt: '', params: prompt.trim() };
+    }
+
+    const promptText = prompt.slice(0, lastParamIndex).trim();
+    const params = prompt.slice(lastParamIndex).trim();
+
+    return { prompt: promptText, params: params };
+  }
+
   function parseOutputResult(outputResult: string): ParsedOutput {
     if (typeof outputResult !== 'string') {
       throw new TypeError("Input must be a string");
@@ -594,6 +647,10 @@ export function apply(ctx: Context, config: Config) {
       }
     } catch (error) {
       logger.error('Error:', error);
+      return JSON.stringify({
+        english_translation: 'Translation failed.',
+        imaginePromptResult: 'Prompt generation failed.',
+      });
     }
   }
 
