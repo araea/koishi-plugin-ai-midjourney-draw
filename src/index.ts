@@ -9,8 +9,8 @@ export const usage = `## 🎮 使用
 
 1. **获取授权码：**
 
-- 在 [aiMidjourney](https://buy.ai-mj.cn/) 平台购买套餐。
-- 在 [aiMidjourney](https://draw.ai-mj.com/login) 平台登录。
+- 前往 [https://buy.ai-mj.cn/](https://buy.ai-mj.cn/) 购买套餐。
+- 前往 [https://draw.ai-mj.com/login](https://draw.ai-mj.com/login) 登录。
 - 登录后，F12 打开控制台，切换网络选项卡。
 - 在网页输入框中输入 \`/shorten a dog\` 并发送。
 - 在控制台中找到 \`shorten\` 请求。
@@ -82,6 +82,10 @@ interface Button {
   style: number;
 }
 
+interface ParsedOutput {
+  imaginePromptResult?: string;
+  english_translation?: string;
+}
 
 export function apply(ctx: Context, config: Config) {
   // cl*
@@ -137,79 +141,54 @@ export function apply(ctx: Context, config: Config) {
   // xgzy*
   ctx.command('aiMidjourney.相关资源', 'AI 绘图相关资源')
     .action(async ({session}) => {
-      await sendMessage(session, `# 提示词
+      await sendMessage(session, `AI 绘图资源汇总
+====================
 
-## 辅助工具
+学习资料
+--------
+* 官方文档：https://docs.midjourney.com/
+  - 最权威的 Midjourney 使用指南
+* 基础入门：https://www.midjourny.cn/tutorial/10.html
+  - 新手必读的入门教程
+* 进阶技巧：https://www.midjourny.cn/tutorial/32.html
+  - 提升技能的进阶指南
+* 学习路径：https://learningprompt.wiki/zh-Hans/docs/midjourney-learning-path
+  - 系统化的 Midjourney 学习路径
 
-https://www.ai-mj.cn/prompt.html
+提示词工具
+----------
+* 生成器：https://www.ai-mj.cn/gpt_prompt.html
+  - AI 辅助创作提示词
+* 风格参考：https://midjourneysref.com/
+  - sref 风格码查询工具
+* 提示词辞典：https://ai-mj-cn.feishu.cn/file/BBPZbdoDDowyPfxxdpUcEkiJnUc
+  - 常用提示词汇集合
 
-## 生成器
+参考资源
+--------
+* 通用指南：https://ai-mj-cn.feishu.cn/docx/SJNAdnBWsoKTrVxvuwrc0ANxnkd
+  - 全面的提示词技巧和建议
+* 人物姿态：https://ai-mj-cn.feishu.cn/docx/VgUwdFqXMo5bqBxr2lnchgsenQb
+  - 精确控制人物造型的方法
+* 3D 效果：https://ai-mj-cn.feishu.cn/docx/EboidKOpionXNvx520Uc5kVHnVc
+  - 创作立体感作品的指南
+* 风格示例：https://ai-mj-cn.feishu.cn/file/XBjTbokkBom5nfx6PAOcB8rCnWh
+  - 多种艺术风格的参考
 
-https://www.ai-mj.cn/gpt_prompt.html
+灵感来源
+--------
+* Gate2AI：https://www.gate2ai.com/zh-cn/prompts-midjourney
+* MusesAI：https://musesai.io/zh
+* Paooo：https://paooo.com/ai-gallery/
+* AI Gallery：https://www.aigallery.top/
 
-## 咒语分享
+小贴士
+------
+- 结合多个资源，创作出独特作品
+- 持续学习和实践，掌握 Midjourney 的精髓
+- 关注社区分享，获取最新技巧和灵感
 
-https://tieba.baidu.com/p/8448977788
-
-## sref 风格码
-
-https://midjourneysref.com/
-
-## 通用
-
-https://ai-mj-cn.feishu.cn/docx/SJNAdnBWsoKTrVxvuwrc0ANxnkd
-https://ai-mj-cn.feishu.cn/docx/LVzldxL1foFWlAxYSOecPqlVnkh
-
-## 人物姿态控制
-
-https://ai-mj-cn.feishu.cn/docx/VgUwdFqXMo5bqBxr2lnchgsenQb
-
-## 3D
-
-https://ai-mj-cn.feishu.cn/docx/EboidKOpionXNvx520Uc5kVHnVc
-
-## 辞典
-
-https://ai-mj-cn.feishu.cn/file/BBPZbdoDDowyPfxxdpUcEkiJnUc
-
-## 风格
-
-https://ai-mj-cn.feishu.cn/file/XBjTbokkBom5nfx6PAOcB8rCnWh
-
-## 小红书案例参考
-
-https://www.xiaohongshu.com/user/profile/602b7fa700000000010068ab?exSource=https://ai-mj-cn.feishu.cn/
-
-> 小红书 + 特定风格
-
-# 教程
-
-## 官方文档
-
-https://docs.midjourney.com/
-
-## 基础入门
-
-https://www.midjourny.cn/tutorial/10.html
-https://blog.csdn.net/weixin_42080277/article/details/130274792
-
-## 参数&指令解析
-
-https://ai-mj-cn.feishu.cn/docx/BLfEdffiNoxMZIxQmaYc54wXnif
-
-## 进阶
-
-https://www.midjourny.cn/tutorial/32.html
-https://learningprompt.wiki/zh-Hans/docs/midjourney-learning-path
-
-# 第三方分类图库（用于关键词参考）
-
-https://www.gate2ai.com/zh-cn/prompts-midjourney
-https://musesai.io/zh
-https://paooo.com/ai-gallery/
-https://www.aigallery.top/
-https://www.ai-img-gen.com/
-https://www.yangpiancool.com/`)
+祝你创作愉快！`)
     })
   // sctsc* sc*
   ctx.command('aiMidjourney.提示词生成器 <prompt:text>', '生成提示词')
@@ -218,52 +197,47 @@ https://www.yangpiancool.com/`)
         await sendMessage(session, `缺少提示词。`);
         return
       }
-      const result = await fetchCompletions(`# Command area
-
-As a prompt generator for a generative AI called "Midjourney", you will create image prompts for the AI to visualize. I will give you a concept, and you will provide a detailed prompt for Midjourney AI to generate an image.
-
-Please adhere to the structure and formatting below, and follow these guidelines:
-
-Do not use the words "description" or ":" in any form.
-Do not place a comma between [ar] and [v].
-Write each prompt in one line without using return.
-Structure:
-[1] = a simple concept or object.
-[2] = a detailed description of [1] with specific imagery details.
-[3] = a detailed description of the scene's environment.
-[4] = a detailed description of the compositions.
-[5] = a detailed description of the scene's mood, feelings, and atmosphere.
-[6] = A style (e.g. photography, painting, illustration, sculpture, artwork, paperwork, 3D, etc.) for [1].
-[7] =  a detailed description of the scene's mood, feelings, and atmosphere.
-[ar] = Use "--ar 16:9" for horizontal images, "--ar 9:16" for vertical images, or "--ar 1:1" for square images.
-[v] = Use "--niji 6.1" for Japanese art style, or "--v 6.1" for other styles.
-
-
-Formatting:
-Follow this prompt structure: "/imagine prompt: [1], [2], [3], [4], [5], [6], [7], [ar] [v]".
-
-Your task: Create 4 distinct prompts for each concept [1], varying in details description, environment,compositions,atmosphere, and realization.
-
-Write your prompts in english.
-Do not describe unreal concepts as "real" or "photographic".
-Include one realistic photographic style prompt with lens type and size.
-Separate different prompts with two new lines.
-Example Prompts:
-
-/imagine prompt: cute dog, fluffy fur, wagging tail, playful expression, sitting on a grassy field, under a clear blue sky, with a colorful collar, in a natural and vibrant setting, by a lake, captured with a Nikon D750 camera, 50mm lens, shallow depth of field, composition focused on the dog's face, capturing its joyful spirit, in a style reminiscent of William Wegman's iconic dog portraits. --ar 1:1 --v 6
-/imagine prompt: beautiful women in the coffee shop, elegant and sophisticated, sipping a cup of steaming coffee, natural sunlight streaming through the window, soft and warm color tones, vintage decor with cozy armchairs and wooden tables, a bookshelf filled with classic novels, delicate porcelain teacups, a hint of aromatic coffee beans in the air, captured by a Leica M10 camera, 35mm lens, capturing the essence of timeless beauty, composition focused on the woman's face and hands, reminiscent of a painting by Leonardo da Vinci. --ar 1:1 --v 6
-/imagine prompt: A captivating Halo Reach landscape with a Spartan amidst a battlefield, fallen enemies around, smoke and fire in the background, emphasizing the Spartan's determination and bravery, detailed environment blending chaos and beauty, Illustration, digital art, --ar 16:9 --v 6
-
-# Interaction region
-
-User: Create 4 distinct prompts for each concept [1], varying in details description, environment, compositions, atmosphere, and realization.
-
-Assistant: Sure, please provide the concept you want me to create prompts for.
-
-User: ${prompt}
-
-Assistant: Here are 4 distinct English prompts for the concept "${prompt}":`);
-      await sendMessage(session, `${result}`);
+      const json = {
+        "task": "Generate a detailed Midjourney AI image prompt based on a given concept or object",
+        "input": {
+          "conceptOrObject": prompt
+        },
+        "output": {
+          "format": "JSON",
+          "structure": {
+            "conceptOrObject": "Input concept or object",
+            "thinkStepByStep": [
+              "Step 1",
+              "Step 2",
+              "..."
+            ],
+            "imaginePromptResult": "Final prompt string"
+          }
+        },
+        "guidelines": [
+          "Use vivid and specific language",
+          "Include details about appearance, environment, composition, mood, and style",
+          "Vary the focus and interpretation across the prompt",
+          "Avoid using 'description' or ':' in the prompts",
+          "Include one realistic photographic style with lens type and size",
+          "Write the prompt as a continuous string without line breaks"
+        ],
+        "promptStructure": [
+          "[1] Simple concept or object",
+          "[2] Detailed description of [1]",
+          "[3] Scene environment",
+          "[4] Composition",
+          "[5] Mood, feelings, and atmosphere",
+          "[6] Style (e.g., photography, painting, 3D)",
+          "[7] Additional mood or atmosphere details",
+          "[ar] Aspect ratio (--ar 16:9, --ar 9:16, or --ar 1:1)",
+          "[v] Version (--niji 6 for Japanese style, or --v 6.1 for others)"
+        ],
+        "promptFormat": "[1], [2], [3], [4], [5], [6], [7], [ar] [v]",
+        "note": "If the input is not in English, translate it before processing. Output the JSON object in English only. Only JSON object, no additional text."
+      };
+      const result = await fetchCompletions(JSON.stringify(json));
+      await sendMessage(session, `${parseOutputResultToGetImaginePromptResult(result)}`);
     })
   // zyy* fy*
   ctx.command('aiMidjourney.中译英 <text:text>', '翻译中文到英文')
@@ -275,24 +249,30 @@ Assistant: Here are 4 distinct English prompts for the concept "${prompt}":`);
         await sendMessage(session, `缺少翻译文本。`);
         return
       }
-      const result = await fetchCompletions(`# Command area
-
-You are a professional Chinese to English translator. Translate the given Chinese text into fluent, natural-sounding English. Aim for accuracy in conveying the original meaning while adapting to English language conventions and style. Preserve any specific terms, names, or cultural references, providing brief explanations in brackets if necessary for clarity. Produce a translation that reads smoothly to native English speakers while faithfully representing the source content.
-
-# Interaction region
-
-User: 你好，我是一只可爱的猫。
-
-Assistant: Hello, I am an adorable cat.
-
-User: 我喜欢吃鱼。
-
-Assistant: I like to eat fish.
-
-User: ${text}
-
-Assistant: `);
-      await sendMessage(session, `${result}`);
+      const json = {
+        "role": "Expert Chinese to English Translator",
+        "task": "Translate Chinese text to natural, fluent English",
+        "instructions": [
+          "Maintain original tone and style",
+          "Adapt idioms and expressions",
+          "Preserve cultural nuances",
+          "Use brief parenthetical explanations if needed",
+          "Consider context for words with multiple meanings",
+          "Use appropriate colloquialisms when present in source",
+          "Ensure grammatical correctness and natural flow",
+          "Adapt wordplay to maintain original spirit",
+          "Use gender-neutral pronouns for animals unless specified"
+        ],
+        "input": {
+          "chinese_text": text
+        },
+        "output_format": {
+          "english_translation": "String containing only the translated text"
+        },
+        "notes": "Exclude additional explanations or meta-commentary in the output. Output the JSON object in English only. Only JSON object, no additional text."
+      }
+      const result = await fetchCompletions(JSON.stringify(json));
+      await sendMessage(session, `${parseOutputResultToGetEnglishTranslation(result)}`);
     })
   // fy* yyz*
   ctx.command('aiMidjourney.英译中 <prompt:text>', '翻译英文到中文')
@@ -516,6 +496,52 @@ Assistant: `);
     })
 
   // hs*
+  function parseOutputResult(outputResult: string): ParsedOutput {
+    if (typeof outputResult !== 'string') {
+      throw new TypeError("Input must be a string");
+    }
+
+    const trimmedResult = outputResult.trim();
+
+    const jsonRegex = /^\s*({[\s\S]*}|\[[\s\S]*\])\s*$/;
+    const match = trimmedResult.match(jsonRegex);
+
+    if (!match) {
+      const partialJsonRegex = /{[\s\S]*}|\[[\s\S]*\]/;
+      const partialMatch = trimmedResult.match(partialJsonRegex);
+
+      if (!partialMatch) {
+        throw new Error("No valid JSON structure found in the output result");
+      }
+
+      try {
+        return JSON.parse(partialMatch[0]) as ParsedOutput;
+      } catch (error) {
+        logger.warn(`Found JSON-like structure but failed to parse: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        return {};
+      }
+    }
+
+    try {
+      const parsedJson = JSON.parse(match[0]);
+      if (typeof parsedJson !== 'object' || parsedJson === null) {
+        throw new TypeError("Parsed result is not an object or array");
+      }
+      return parsedJson as ParsedOutput;
+    } catch (error) {
+      logger.error(`Failed to parse JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return {};
+    }
+  }
+
+  function parseOutputResultToGetImaginePromptResult(outputResult: string): string | undefined {
+    return parseOutputResult(outputResult).imaginePromptResult ?? outputResult;
+  }
+
+  function parseOutputResultToGetEnglishTranslation(outputResult: string): string | undefined {
+    return parseOutputResult(outputResult).english_translation ?? outputResult;
+  }
+
   async function convertUrlToBase64(url: string): Promise<string> {
     const base64 = await getImageBase64(url);
     return `data:image/jpeg;base64,${base64}`;

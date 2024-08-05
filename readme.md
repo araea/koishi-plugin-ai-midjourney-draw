@@ -18,8 +18,8 @@ npm install koishi-plugin-ai-midjourney-draw
 
 1. **获取授权码：**
 
-- 在 [aiMidjourney](https://buy.ai-mj.cn/) 平台购买套餐。
-- 在 [aiMidjourney](https://draw.ai-mj.com/login) 平台登录。
+- 前往 [https://buy.ai-mj.cn/](https://buy.ai-mj.cn/) 购买套餐。
+- 前往 [https://draw.ai-mj.com/login](https://draw.ai-mj.com/login) 登录。
 - 登录后，F12 打开控制台，切换网络选项卡。
 - 在网页输入框中输入 `/shorten a dog` 并发送。
 - 在控制台中找到 `shorten` 请求。
