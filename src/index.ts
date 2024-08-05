@@ -29,11 +29,12 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 
 ## ⚙️ 配置项
 
-| 配置项             | 类型      | 描述                       |
-|-----------------|---------|--------------------------|
-| \`authorization\` | string  | **必填**。aiMidjourney 授权码。 |
-| \`autoTranslate\` | boolean | 是否自动翻译提示词。默认为 \`false\`。   |
-| \`timeoutDuration\` | number | 请求超时时间（分钟）。默认为 \`10\`。     |
+| 配置项               | 类型      | 描述                       |
+|-------------------|---------|--------------------------|
+| \`authorization\`   | string  | **必填**。aiMidjourney 授权码。 |
+| \`autoTranslate\`   | boolean | 是否自动翻译提示词。默认为 \`false\`。   |
+| \`timeoutDuration\` | number  | 请求超时时间（分钟）。默认为 \`10\`。     |
+| \`printProgress\`   | boolean | 是否打印绘图进度。默认为 \`true\`。     |
 
 ## 🌼 指令
 
@@ -62,12 +63,14 @@ export interface Config {
   authorization: string
   autoTranslate: boolean
   timeoutDuration: number
+  printProgress: boolean
 }
 
 export const Config: Schema<Config> = Schema.object({
   authorization: Schema.string().required().description('aiMidjourney 授权码。'),
   autoTranslate: Schema.boolean().default(false).description('是否自动将中文提示词翻译成英文。'),
   timeoutDuration: Schema.number().default(10).description('任务超时时长（分钟）。'),
+  printProgress: Schema.boolean().default(true).description('是否打印任务进度。'),
 })
 
 // smb*
@@ -285,12 +288,21 @@ export function apply(ctx: Context, config: Config) {
   ctx.command('aiMidjourney.合并图片', '合并多张图片（最多5张）')
     .action(async ({session}) => {
       let imageUrls = getImageUrls(session.event.message.elements);
+      let imageUrlsAndRestPrompt = extractLinksInPrompts(`${h.select(session.event.message.elements, 'text')}`);
+      if (imageUrlsAndRestPrompt.imageUrls.length > 0) {
+        imageUrls = imageUrls.concat(imageUrlsAndRestPrompt.imageUrls);
+      }
       if (session.event.message.quote && session.event.message.quote.elements) {
+        imageUrlsAndRestPrompt = extractLinksInPrompts(`${h.select(session.event.message.quote.elements, 'text')}`);
+        if (imageUrlsAndRestPrompt.imageUrls.length > 0) {
+          imageUrls = imageUrls.concat(imageUrlsAndRestPrompt.imageUrls);
+        }
         const quoteImageUrls = getImageUrls(session.event.message.quote.elements);
         if (quoteImageUrls.length > 0) {
           imageUrls = imageUrls.concat(quoteImageUrls);
         }
       }
+
       if (imageUrls.length === 0) {
         await sendMessage(session, '未找到图片。');
         return;
@@ -447,6 +459,7 @@ export function apply(ctx: Context, config: Config) {
     .action(async ({session}, prompt) => {
       let ossUrls = []
       let imageUrls = getImageUrls(session.event.message.elements);
+
       if (session.event.message.quote && session.event.message.quote.elements) {
         const quoteImageUrls = getImageUrls(session.event.message.quote.elements);
         if (quoteImageUrls.length > 0) {
@@ -458,6 +471,7 @@ export function apply(ctx: Context, config: Config) {
       }
 
       prompt = `${h.select(prompt, 'text')}`;
+
       if (!prompt) {
         if (session.event.message.quote && session.event.message.quote.elements) {
           prompt = `${h.select(session.event.message.quote.elements, 'text')}`;
@@ -466,15 +480,25 @@ export function apply(ctx: Context, config: Config) {
           await sendMessage(session, `缺少绘图提示词。`);
           return
         }
+      } else if (session.event.message.quote && session.event.message.quote.elements) {
+        const imageUrlsAndRestPrompt = extractLinksInPrompts(`${h.select(session.event.message.quote.elements, 'text')}`);
+        if (imageUrlsAndRestPrompt.imageUrls.length > 0) {
+          ossUrls = ossUrls.concat(await processImageUrls(imageUrlsAndRestPrompt.imageUrls));
+        }
       }
       if (prompt.includes('--repeat') || prompt.includes('--r')) {
         await sendMessage(session, '不支持 --repeat 或 --r 参数。')
         return
       }
+
       if (config.autoTranslate) {
-        const parsePromptResult = parsePrompt(prompt);
-        const translatedPrompt = await translateChineseToEnglish(parsePromptResult.prompt);
-        prompt = `${translatedPrompt} ${parsePromptResult.params}`;
+        const promptAndParams = separatePromptWordsAndParameters(prompt);
+        const imageUrlsAndRestPrompt = extractLinksInPrompts(promptAndParams.prompt);
+        const translatedPrompt = await translateChineseToEnglish(imageUrlsAndRestPrompt.rest);
+        if (imageUrlsAndRestPrompt.imageUrls.length > 0) {
+          ossUrls = ossUrls.concat(await processImageUrls(imageUrlsAndRestPrompt.imageUrls));
+        }
+        prompt = `${translatedPrompt} ${promptAndParams.params}`;
       }
 
       prompt = ossUrls.length > 0 ? `${ossUrls.join(' ')} ${prompt}` : prompt;
@@ -495,9 +519,15 @@ export function apply(ctx: Context, config: Config) {
             state: ""
           }
         );
+        if (config.printProgress) {
+          logger.success(`Task ID: ${taskId} | Prompt: ${prompt}`);
+        }
         await sendMessage(session, `已提交绘图任务，请耐心等待。`);
         const result = await pollTaskResult(taskId);
         if (result.status === 'SUCCESS') {
+          if (config.printProgress) {
+            logger.success(`Task ID: ${taskId} | Image URL: ${result.imageUrl}`);
+          }
           const messageId = await sendMessage(session, `${h.image(result.imageUrl)}`);
           ctx.database.create('aiMidjourney', {
             messageId: messageId,
@@ -506,6 +536,9 @@ export function apply(ctx: Context, config: Config) {
           })
           return
         } else {
+          if (config.printProgress) {
+            logger.error(`Task ID: ${taskId} | Fail Reason: ${result.failReason}`);
+          }
           await sendMessage(session, `${result.failReason}`);
           return
         }
@@ -515,6 +548,19 @@ export function apply(ctx: Context, config: Config) {
     })
 
   // hs*
+  function extractLinksInPrompts(prompt: string): { imageUrls: string[], rest: string } {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    const imageUrls = prompt.match(urlRegex) || [];
+
+    const rest = prompt.replace(urlRegex, '').trim();
+
+    return {
+      imageUrls,
+      rest
+    };
+  }
+
   async function translateChineseToEnglish(text: string): Promise<string> {
     const json = {
       "role": "Expert Chinese to English Translator",
@@ -549,7 +595,7 @@ export function apply(ctx: Context, config: Config) {
     }
   }
 
-  function parsePrompt(prompt: string): { prompt: string; params: string } {
+  function separatePromptWordsAndParameters(prompt: string): { prompt: string; params: string } {
     if (typeof prompt !== 'string') {
       throw new Error('Input must be a string');
     }
@@ -557,18 +603,18 @@ export function apply(ctx: Context, config: Config) {
     const lastParamIndex = prompt.lastIndexOf('--');
 
     if (lastParamIndex === -1) {
-      return { prompt: prompt.trim(), params: '' };
+      return {prompt: prompt.trim(), params: ''};
     }
 
     // 检查 "--" 是否在字符串的开头
     if (lastParamIndex === 0) {
-      return { prompt: '', params: prompt.trim() };
+      return {prompt: '', params: prompt.trim()};
     }
 
     const promptText = prompt.slice(0, lastParamIndex).trim();
     const params = prompt.slice(lastParamIndex).trim();
 
-    return { prompt: promptText, params: params };
+    return {prompt: promptText, params: params};
   }
 
   function parseOutputResult(outputResult: string): ParsedOutput {
@@ -795,7 +841,6 @@ export function apply(ctx: Context, config: Config) {
         }
 
         const result = await fetchTaskResult(taskId);
-
         if (result.code === 500 || result.msg === '任务超时。如涉及垫图/反推等与图片相关的操作，请优先使用平台的上传图片功能，使用外链图片可能会造成任务失败。') {
           logger.error('Task timed out due to image processing issues');
           return {
@@ -803,7 +848,9 @@ export function apply(ctx: Context, config: Config) {
             failReason: '任务超时。可能是因为图片处理问题，建议使用平台的上传图片功能。'
           };
         }
-
+        if (config.printProgress) {
+          logger.info(`Task ID: ${taskId} | Status: ${result.status}${result.progress ? ` | Progress: ${result.progress}` : ''}`);
+        }
         if (result.status === 'SUCCESS' || result.status === 'FAILURE') {
           return result;
         }
@@ -811,7 +858,7 @@ export function apply(ctx: Context, config: Config) {
       } catch (error) {
         if (error instanceof Error && error.message === `Polling timed out after ${timeoutDuration} minutes`) {
           logger.error(`Polling timed out after ${timeoutDuration} minutes`);
-          return {status: 'FAILURE', failReason: '任务超时'};
+          return {status: 'FAILURE', failReason: '任务超时。'};
         }
         logger.error('Error fetching task result:', error);
       }
