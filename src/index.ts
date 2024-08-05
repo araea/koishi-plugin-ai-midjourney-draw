@@ -24,7 +24,7 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 
 3. **开始使用：**  在聊天中使用 \`aiMidjourney.绘图\` 命令即可开始绘图。
 
-- 如何将 4 小图放大：引用回复数字 \`1/2/3/4\` 即可，可同时放大多张。
+- **如何将 4 小图放大：** 引用回复数字 \`1/2/3/4\` 即可，可同时放大多张。善用引用哦！
 - **建议自行添加别名：** 例如，可以将 \`aiMidjourney.绘图\` 添加别名为 \`绘图\` 或 \`画图\`，以便更方便地使用。
 
 ## ⚙️ 配置项
@@ -33,6 +33,7 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 |-----------------|---------|--------------------------|
 | \`authorization\` | string  | **必填**。aiMidjourney 授权码。 |
 | \`autoTranslate\` | boolean | 是否自动翻译提示词。默认为 \`false\`。   |
+| \`timeoutDuration\` | number | 请求超时时间（分钟）。默认为 \`10\`。     |
 
 ## 🌼 指令
 
@@ -51,16 +52,22 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 | \`aiMidjourney.绘图 <prompt>\`            | 绘一张图                       |
 | \`aiMidjourney.图片转链接\`                  | 图片转链接                      |
 
+## 🐱 QQ 群
+
+- 956758505
 `
 
+// pz*
 export interface Config {
   authorization: string
   autoTranslate: boolean
+  timeoutDuration: number
 }
 
 export const Config: Schema<Config> = Schema.object({
   authorization: Schema.string().required().description('aiMidjourney 授权码。'),
   autoTranslate: Schema.boolean().default(false).description('是否自动将中文提示词翻译成英文。'),
+  timeoutDuration: Schema.number().default(10).description('任务超时时长（分钟）。'),
 })
 
 // smb*
@@ -767,12 +774,12 @@ export function apply(ctx: Context, config: Config) {
 
   async function pollTaskResult(taskId: string): Promise<any> {
     const startTime = Date.now();
-    const timeoutDuration = 10 * 60 * 1000;
+    const timeoutDuration = config.timeoutDuration * 60 * 1000;
 
     while (true) {
       try {
         if (Date.now() - startTime > timeoutDuration) {
-          throw new Error('Polling timed out after 10 minutes');
+          throw new Error(`Polling timed out after ${timeoutDuration} minutes`);
         }
 
         const result = await fetchTaskResult(taskId);
@@ -790,8 +797,8 @@ export function apply(ctx: Context, config: Config) {
         }
         await new Promise(resolve => setTimeout(resolve, 5000));
       } catch (error) {
-        if (error instanceof Error && error.message === 'Polling timed out after 10 minutes') {
-          logger.error('Polling timed out after 10 minutes');
+        if (error instanceof Error && error.message === `Polling timed out after ${timeoutDuration} minutes`) {
+          logger.error(`Polling timed out after ${timeoutDuration} minutes`);
           return {status: 'FAILURE', failReason: '任务超时'};
         }
         logger.error('Error fetching task result:', error);
