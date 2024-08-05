@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-ai-midjourney-draw",
   "description": "25 元/月 Midjourney 无限绘图。自带提示词生成器、自动翻译、英译中、提示词辅助工具、合并图片、缩短提示词、图片转提示词等功能。",
-  "version": "0.0.9",
+  "version": "1.0.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

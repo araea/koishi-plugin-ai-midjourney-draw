@@ -319,6 +319,9 @@ export function apply(ctx: Context, config: Config) {
   // fxbsd*
   ctx.command('aiMidjourney.缩短提示词 <prompt:text>', '分析并缩短提示词')
     .action(async ({session}, prompt) => {
+      if (session.event.message.quote && session.event.message.quote.elements) {
+        prompt = `${h.select(session.event.message.quote.elements, 'text')}`;
+      }
       if (!prompt) {
         await sendMessage(session, `缺少提示词。`);
         return
