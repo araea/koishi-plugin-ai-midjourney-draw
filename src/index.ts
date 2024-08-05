@@ -285,8 +285,18 @@ export function apply(ctx: Context, config: Config) {
   ctx.command('aiMidjourney.合并图片', '合并多张图片（最多5张）')
     .action(async ({session}) => {
       let imageUrls = getImageUrls(session.event.message.elements);
+      if (session.event.message.quote && session.event.message.quote.elements) {
+        const quoteImageUrls = getImageUrls(session.event.message.quote.elements);
+        if (quoteImageUrls.length > 0) {
+          imageUrls = imageUrls.concat(quoteImageUrls);
+        }
+      }
       if (imageUrls.length === 0) {
         await sendMessage(session, '未找到图片。');
+        return;
+      }
+      if (imageUrls.length < 2) {
+        await sendMessage(session, '至少需要两张图片。');
         return;
       }
       if (imageUrls.length > 5) {
@@ -437,14 +447,16 @@ export function apply(ctx: Context, config: Config) {
     .action(async ({session}, prompt) => {
       let ossUrls = []
       let imageUrls = getImageUrls(session.event.message.elements);
-      if (imageUrls.length > 0) {
-        ossUrls = await processImageUrls(imageUrls);
-      } else if (session.event.message.quote && session.event.message.quote.elements) {
-        imageUrls = getImageUrls(session.event.message.quote.elements);
-        if (imageUrls.length > 0) {
-          ossUrls = await processImageUrls(imageUrls);
+      if (session.event.message.quote && session.event.message.quote.elements) {
+        const quoteImageUrls = getImageUrls(session.event.message.quote.elements);
+        if (quoteImageUrls.length > 0) {
+          imageUrls = imageUrls.concat(quoteImageUrls);
         }
       }
+      if (imageUrls.length > 0) {
+        ossUrls = await processImageUrls(imageUrls);
+      }
+
       prompt = `${h.select(prompt, 'text')}`;
       if (!prompt) {
         if (session.event.message.quote && session.event.message.quote.elements) {
