@@ -116,36 +116,44 @@ export function apply(ctx: Context, config: Config) {
   })
   // zjj*
   ctx.middleware(async (session, next) => {
-    if (session.event.message.quote && session.event.message.quote.member.user.id === session.event.selfId) {
-      let isExecuted = false;
-      const content = `${h.select(session.event.message.elements, 'text')}`
-      const [task] = await ctx.database.get('aiMidjourney', {messageId: session.event.message.quote.id})
-      if (!task) {
-        return await next();
+    if (session.event.message.quote) {
+      let quoteUserId: string | undefined;
+
+      if (session.event.message.quote.member?.user?.id) {
+        quoteUserId = session.event.message.quote.member.user.id;
+      } else if (session.event.message.quote.user?.id) {
+        quoteUserId = session.event.message.quote.user.id;
       }
-      if (content.includes('1')) {
-        await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[0]}`)
-        isExecuted = true;
+
+      if (quoteUserId === session.event.selfId) {
+        let isExecuted = false;
+        const content = `${h.select(session.event.message.elements, 'text')}`
+        const [task] = await ctx.database.get('aiMidjourney', {messageId: session.event.message.quote.id})
+        if (!task) {
+          return await next();
+        }
+        if (content.includes('1')) {
+          await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[0]}`)
+          isExecuted = true;
+        }
+        if (content.includes('2')) {
+          await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[1]}`)
+          isExecuted = true;
+        }
+        if (content.includes('3')) {
+          await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[2]}`)
+          isExecuted = true;
+        }
+        if (content.includes('4')) {
+          await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[3]}`)
+          isExecuted = true;
+        }
+        if (isExecuted) {
+          return;
+        }
       }
-      if (content.includes('2')) {
-        await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[1]}`)
-        isExecuted = true;
-      }
-      if (content.includes('3')) {
-        await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[2]}`)
-        isExecuted = true;
-      }
-      if (content.includes('4')) {
-        await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[3]}`)
-        isExecuted = true;
-      }
-      if (isExecuted) {
-        return;
-      }
-      return await next();
-    } else {
-      return await next();
     }
+    return await next();
   });
   // aiMidjourney h* bz*
   ctx.command('aiMidjourney', 'aiMidjourney 帮助')
