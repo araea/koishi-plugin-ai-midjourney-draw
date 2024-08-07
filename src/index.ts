@@ -296,9 +296,11 @@ export function apply(ctx: Context, config: Config) {
   ctx.command('aiMidjourney.合并图片 [text:text]', '合并多张图片（最多5张）')
     .action(async ({session}, text) => {
       let imageUrls = getImageUrls(session.event.message.elements);
-      const headImgUrls = getHeadImgUrls(h.select(text, 'at'))
-      if (headImgUrls.length > 0) {
-        imageUrls = imageUrls.concat(headImgUrls);
+      if (session.event.platform === 'onebot' || session.event.platform === 'red') {
+        const headImgUrls = getHeadImgUrls(h.select(text, 'at'))
+        if (headImgUrls.length > 0) {
+          imageUrls = imageUrls.concat(headImgUrls);
+        }
       }
       let imageUrlsAndRestPrompt = extractLinksInPrompts(`${h.select(session.event.message.elements, 'text')}`);
       if (imageUrlsAndRestPrompt.imageUrls.length > 0) {
@@ -400,7 +402,7 @@ export function apply(ctx: Context, config: Config) {
       } else {
         imageUrl = getFirstImageUrl(session.event.message.elements);
       }
-      if (!imageUrl) {
+      if (!imageUrl && (session.event.platform === 'onebot' || session.event.platform === 'red')) {
         const headImgUrls = getHeadImgUrls(h.select(text, 'at'))
         if (headImgUrls.length > 0) {
           imageUrl = headImgUrls[0];
@@ -443,9 +445,11 @@ export function apply(ctx: Context, config: Config) {
       } else {
         imageUrls = getImageUrls(session.event.message.elements);
       }
-      const headImgUrls = getHeadImgUrls(h.select(text, 'at'))
-      if (headImgUrls.length > 0) {
-        imageUrls = imageUrls.concat(headImgUrls);
+      if (session.event.platform === 'onebot' || session.event.platform === 'red') {
+        const headImgUrls = getHeadImgUrls(h.select(text, 'at'))
+        if (headImgUrls.length > 0) {
+          imageUrls = imageUrls.concat(headImgUrls);
+        }
       }
       if (imageUrls.length === 0) {
         await sendMessage(session, '未找到图片。');
@@ -483,9 +487,11 @@ export function apply(ctx: Context, config: Config) {
       let ossUrls = []
       let imageUrls = getImageUrls(session.event.message.elements);
 
-      const headImgUrls = getHeadImgUrls(h.select(prompt, 'at'))
-      if (headImgUrls.length > 0) {
-        imageUrls = imageUrls.concat(headImgUrls);
+      if (session.event.platform === 'onebot' || session.event.platform === 'red') {
+        const headImgUrls = getHeadImgUrls(h.select(prompt, 'at'))
+        if (headImgUrls.length > 0) {
+          imageUrls = imageUrls.concat(headImgUrls);
+        }
       }
       if (session.event.message.quote && session.event.message.quote.elements) {
         const quoteImageUrls = getImageUrls(session.event.message.quote.elements);
@@ -556,7 +562,7 @@ export function apply(ctx: Context, config: Config) {
             logger.success(`Task ID: ${taskId} | Image URL: ${result.imageUrl}`);
           }
           const messageId = await sendMessage(session, `${h.image(result.imageUrl)}`);
-          ctx.database.create('aiMidjourney', {
+          await ctx.database.create('aiMidjourney', {
             messageId: messageId,
             taskId,
             customIds: extractCustomIds(result.buttons)
