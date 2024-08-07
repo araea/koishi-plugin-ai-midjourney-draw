@@ -293,9 +293,13 @@ export function apply(ctx: Context, config: Config) {
       await sendMessage(session, `https://www.ai-mj.cn/prompt.html`)
     })
   // rh* hb*
-  ctx.command('aiMidjourney.合并图片', '合并多张图片（最多5张）')
-    .action(async ({session}) => {
+  ctx.command('aiMidjourney.合并图片 [text:text]', '合并多张图片（最多5张）')
+    .action(async ({session}, text) => {
       let imageUrls = getImageUrls(session.event.message.elements);
+      const headImgUrls = getHeadImgUrls(h.select(text, 'at'))
+      if (headImgUrls.length > 0) {
+        imageUrls = imageUrls.concat(headImgUrls);
+      }
       let imageUrlsAndRestPrompt = extractLinksInPrompts(`${h.select(session.event.message.elements, 'text')}`);
       if (imageUrlsAndRestPrompt.imageUrls.length > 0) {
         imageUrls = imageUrls.concat(imageUrlsAndRestPrompt.imageUrls);
@@ -320,7 +324,8 @@ export function apply(ctx: Context, config: Config) {
         return;
       }
       if (imageUrls.length > 5) {
-        imageUrls = imageUrls.slice(0, 5);
+        await sendMessage(session, '最多只能合并五张图片。');
+        return;
       }
       const base64Array: string[] = await convertUrlsToBase64(imageUrls);
       const taskId = await submitTask('blend', {
@@ -387,13 +392,19 @@ export function apply(ctx: Context, config: Config) {
       }
     })
   // tpztsc* ms*
-  ctx.command('aiMidjourney.图片转提示词', '图片转提示词')
-    .action(async ({session}) => {
+  ctx.command('aiMidjourney.图片转提示词 [text:text]', '图片转提示词')
+    .action(async ({session}, text) => {
       let imageUrl = '';
       if (session.event.message.quote && session.event.message.quote.elements) {
         imageUrl = getFirstImageUrl(session.event.message.quote.elements);
       } else {
         imageUrl = getFirstImageUrl(session.event.message.elements);
+      }
+      if (!imageUrl) {
+        const headImgUrls = getHeadImgUrls(h.select(text, 'at'))
+        if (headImgUrls.length > 0) {
+          imageUrl = headImgUrls[0];
+        }
       }
       if (!imageUrl) {
         await sendMessage(session, '未找到图片。');
@@ -424,19 +435,23 @@ export function apply(ctx: Context, config: Config) {
       }
     })
   // tpzurl* zlj*
-  ctx.command('aiMidjourney.图片转链接', '图片转链接')
-    .action(async ({session}) => {
+  ctx.command('aiMidjourney.图片转链接 [text:text]', '图片转链接')
+    .action(async ({session}, text) => {
       let imageUrls = [];
       if (session.event.message.quote && session.event.message.quote.elements) {
         imageUrls = getImageUrls(session.event.message.quote.elements);
       } else {
         imageUrls = getImageUrls(session.event.message.elements);
       }
+      const headImgUrls = getHeadImgUrls(h.select(text, 'at'))
+      if (headImgUrls.length > 0) {
+        imageUrls = imageUrls.concat(headImgUrls);
+      }
       if (imageUrls.length === 0) {
         await sendMessage(session, '未找到图片。');
         return;
       }
-      const ossUrls = await processImageUrls(imageUrls);
+      let ossUrls = await processImageUrls(imageUrls);
       await sendMessage(session, `${ossUrls.join('\n\n')}`);
     })
   // fd*
@@ -468,6 +483,10 @@ export function apply(ctx: Context, config: Config) {
       let ossUrls = []
       let imageUrls = getImageUrls(session.event.message.elements);
 
+      const headImgUrls = getHeadImgUrls(h.select(prompt, 'at'))
+      if (headImgUrls.length > 0) {
+        imageUrls = imageUrls.concat(headImgUrls);
+      }
       if (session.event.message.quote && session.event.message.quote.elements) {
         const quoteImageUrls = getImageUrls(session.event.message.quote.elements);
         if (quoteImageUrls.length > 0) {
@@ -556,6 +575,13 @@ export function apply(ctx: Context, config: Config) {
     })
 
   // hs*
+  function getHeadImgUrls(atElements: Element[]): string[] {
+    return atElements.map(element => {
+      const atId = element.attrs.id;
+      return `https://q.qlogo.cn/g?b=qq&s=640&nk=${atId}`;
+    });
+  }
+
   function extractLinksInPrompts(prompt: string): { imageUrls: string[], rest: string } {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
 
