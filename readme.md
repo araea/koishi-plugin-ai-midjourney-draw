@@ -50,7 +50,8 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 | 指令                                    | 描述                         |
 |---------------------------------------|----------------------------|
 | `aiMidjourney`                        | aiMidjourney 帮助            |
-| `aiMidjourney.相关资源`                   | AI 绘图相关资源                  |
+| `aiMidjourney.相关资源`                   | Midjourney 绘图相关资源          |
+| `aiMidjourney.参数列表`                   | Midjourney 参数列表            |
 | `aiMidjourney.提示词生成器 <prompt>`        | 生成提示词                      |
 | `aiMidjourney.英译中 <prompt>`           | 翻译英文到中文                    |
 | `aiMidjourney.中译英 <prompt>`           | 翻译中文到英文（Claude-3.5-Sonnet） |

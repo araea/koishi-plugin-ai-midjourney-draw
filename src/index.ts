@@ -1,5 +1,7 @@
 import {Context, h, Schema, Element} from 'koishi'
 import {} from '@koishijs/plugin-help'
+import path from "path";
+import fs from "fs";
 
 export const name = 'ai-midjourney-draw'
 export const inject = {
@@ -41,7 +43,8 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 | 指令                                    | 描述                         |
 |---------------------------------------|----------------------------|
 | \`aiMidjourney\`                        | aiMidjourney 帮助            |
-| \`aiMidjourney.相关资源\`                   | AI 绘图相关资源                  |
+| \`aiMidjourney.相关资源\`                   | Midjourney 绘图相关资源          |
+| \`aiMidjourney.参数列表\`                   | Midjourney 参数列表            |
 | \`aiMidjourney.提示词生成器 <prompt>\`        | 生成提示词                      |
 | \`aiMidjourney.英译中 <prompt>\`           | 翻译英文到中文                    |
 | \`aiMidjourney.中译英 <prompt>\`           | 翻译中文到英文（Claude-3.5-Sonnet） |
@@ -104,6 +107,9 @@ interface ParsedOutput {
 export function apply(ctx: Context, config: Config) {
   // cl*
   const logger = ctx.logger('aiMidjourney')
+  // wj*
+  const parameterListFilePath = path.join(__dirname, 'assets', '参数列表.png');
+  const parameterListImgBuffer = fs.readFileSync(parameterListFilePath)
   //tzb*
   ctx.database.extend('aiMidjourney', {
     id: 'unsigned',
@@ -154,63 +160,21 @@ export function apply(ctx: Context, config: Config) {
       }
     }
     return await next();
-  });
+  }, true);
   // aiMidjourney h* bz*
   ctx.command('aiMidjourney', 'aiMidjourney 帮助')
     .action(async ({session}) => {
       await session.execute(`aiMidjourney -h`)
     })
   // xgzy*
-  ctx.command('aiMidjourney.相关资源', 'AI 绘图相关资源')
+  ctx.command('aiMidjourney.相关资源', 'Midjourney 绘图相关资源')
     .action(async ({session}) => {
-      await sendMessage(session, `AI 绘图资源汇总
-====================
-
-学习资料
---------
-* 官方文档：https://docs.midjourney.com/
-  - 最权威的 Midjourney 使用指南
-* 基础入门：https://www.midjourny.cn/tutorial/10.html
-  - 新手必读的入门教程
-* 进阶技巧：https://www.midjourny.cn/tutorial/32.html
-  - 提升技能的进阶指南
-* 学习路径：https://learningprompt.wiki/zh-Hans/docs/midjourney-learning-path
-  - 系统化的 Midjourney 学习路径
-
-提示词工具
-----------
-* 生成器：https://www.ai-mj.cn/gpt_prompt.html
-  - AI 辅助创作提示词
-* 风格参考：https://midjourneysref.com/
-  - sref 风格码查询工具
-* 提示词辞典：https://ai-mj-cn.feishu.cn/file/BBPZbdoDDowyPfxxdpUcEkiJnUc
-  - 常用提示词汇集合
-
-参考资源
---------
-* 通用指南：https://ai-mj-cn.feishu.cn/docx/SJNAdnBWsoKTrVxvuwrc0ANxnkd
-  - 全面的提示词技巧和建议
-* 人物姿态：https://ai-mj-cn.feishu.cn/docx/VgUwdFqXMo5bqBxr2lnchgsenQb
-  - 精确控制人物造型的方法
-* 3D 效果：https://ai-mj-cn.feishu.cn/docx/EboidKOpionXNvx520Uc5kVHnVc
-  - 创作立体感作品的指南
-* 风格示例：https://ai-mj-cn.feishu.cn/file/XBjTbokkBom5nfx6PAOcB8rCnWh
-  - 多种艺术风格的参考
-
-灵感来源
---------
-* Gate2AI：https://www.gate2ai.com/zh-cn/prompts-midjourney
-* MusesAI：https://musesai.io/zh
-* Paooo：https://paooo.com/ai-gallery/
-* AI Gallery：https://www.aigallery.top/
-
-小贴士
-------
-- 结合多个资源，创作出独特作品
-- 持续学习和实践，掌握 Midjourney 的精髓
-- 关注社区分享，获取最新技巧和灵感
-
-祝你创作愉快！`)
+      await sendMessage(session, `https://www.yuque.com/r/note/449be76b-f9ef-474a-be12-f3ba213a087b`)
+    })
+  // cslb*
+  ctx.command('aiMidjourney.参数列表', 'Midjourney 参数列表')
+    .action(async ({session}) => {
+      await sendMessage(session, h.image(parameterListImgBuffer, `image/png`))
     })
   // sctsc* sc*
   ctx.command('aiMidjourney.提示词生成器 <prompt:text>', '生成提示词')
