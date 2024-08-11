@@ -183,88 +183,54 @@ export function apply(ctx: Context, config: Config) {
         await sendMessage(session, `缺少提示词。`);
         return
       }
-      const json = {
-        "task": "Generate a detailed Midjourney AI image prompt based on given inputs",
-        "input": {
-          "conceptOrObject": prompt,
-          "mood": "Desired mood or atmosphere",
-          "style": "Artistic style or medium",
-          "environment": "Setting or background",
-          "timeOfDay": "Time of day or lighting condition",
-          "additionalDetails": "Any extra details or elements"
-        },
-        "output": {
-          "format": "JSON",
-          "structure": {
-            "conceptOrObject": "Input concept or object",
-            "thinkStepByStep": [
-              "Step 1: Analyze the main concept or object",
-              "Step 2: Develop detailed description",
-              "Step 3: Incorporate environment and setting",
-              "Step 4: Define composition and framing",
-              "Step 5: Establish mood and atmosphere",
-              "Step 6: Determine artistic style and medium",
-              "Step 7: Add finishing touches and additional details"
-            ],
-            "promptComponents": {
-              "mainDescription": "Detailed description of the main concept or object",
-              "environment": "Description of the setting or background",
-              "composition": "Details about framing, perspective, and focus",
-              "mood": "Description of the mood, feelings, and atmosphere",
-              "style": "Artistic style, medium, or technique",
-              "additionalDetails": "Extra elements or specific instructions",
-              "technicalParameters": "Aspect ratio and version specifications"
-            },
-            "finalPrompt": "Complete, formatted prompt string"
-          }
-        },
-        "guidelines": [
-          "Use vivid, specific, and descriptive language",
-          "Incorporate sensory details (visual, auditory, tactile)",
-          "Balance broad concepts with specific details",
-          "Vary sentence structure and length for interest",
-          "Use metaphors or similes to enhance descriptions",
-          "Include unexpected or unique elements for creativity",
-          "Specify camera angles, distances, and perspectives for photographic styles",
-          "Mention lighting conditions, colors, and textures",
-          "Incorporate movement or action when appropriate",
-          "Avoid using 'description of' or colons in the prompts",
-          "Write the prompt as a continuous string without line breaks"
-        ],
-        "promptStructure": [
-          "[1] Main concept or object",
-          "[2] Detailed description of [1]",
-          "[3] Environment and setting",
-          "[4] Composition and framing",
-          "[5] Mood, feelings, and atmosphere",
-          "[6] Artistic style or medium",
-          "[7] Lighting and color palette",
-          "[8] Additional elements or details",
-          "[9] Camera or perspective details (for photographic styles)",
-          "[10] Texture and material specifications",
-          "[11] Action or movement (if applicable)",
-          "[ar] Aspect ratio (--ar 16:9, --ar 9:16, or --ar 1:1)",
-          "[v] Version (--niji 6 for anime and illustrative styles, or --v 6.1 for others)"
-        ],
-        "promptFormat": "[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [ar] [v]",
-        "examples": [
-          {
-            "input": {
-              "conceptOrObject": "Enchanted forest",
-              "mood": "Mysterious and magical",
-              "style": "Digital painting",
-              "environment": "Dense woodland",
-              "timeOfDay": "Twilight",
-              "additionalDetails": "Glowing fireflies"
-            },
-            "output": {
-              "finalPrompt": "Enchanted forest, ancient gnarled trees with bioluminescent bark, dense misty woodland bathed in twilight hues, winding path leading to a hidden clearing, mysterious and magical atmosphere, digital painting style with rich textures, soft purple and blue color palette with hints of golden light, swirling fireflies creating trails of light, low angle view emphasizing towering trees, intricate root systems and moss-covered stones, gentle breeze rustling leaves, --ar 16:9 --v 6.1"
-            }
-          }
-        ],
-        "note": "If the input is not in English, translate it before processing. Output the JSON object in English only. Provide only the JSON object, no additional text."
-      };
-      const result = await fetchCompletions(JSON.stringify(json));
+      const promptSendToAI = `You are an AI assistant specialized in generating detailed Midjourney image prompts. Your task is to create a vivid, descriptive prompt based on the input provided. Follow these steps and guidelines:
+
+1. Analyze the main concept or object given.
+2. Develop a detailed description of this concept or object.
+3. Incorporate the specified environment and setting.
+4. Define the composition and framing of the image.
+5. Establish the desired mood and atmosphere.
+6. Determine the artistic style and medium.
+7. Add finishing touches and additional details.
+
+Use vivid, specific, and descriptive language. Incorporate sensory details (visual, auditory, tactile). Balance broad concepts with specific details. Vary sentence structure and length for interest. Use metaphors or similes to enhance descriptions. Include unexpected or unique elements for creativity. Specify camera angles, distances, and perspectives for photographic styles. Mention lighting conditions, colors, and textures. Incorporate movement or action when appropriate.
+
+Avoid using 'description of' or colons in the prompts. Write the prompt as a continuous string without line breaks.
+
+Structure your prompt in this order:
+1. Main concept or object
+2. Detailed description
+3. Environment and setting
+4. Composition and framing
+5. Mood, feelings, and atmosphere
+6. Artistic style or medium
+7. Lighting and color palette
+8. Additional elements or details
+9. Camera or perspective details (for photographic styles)
+10. Texture and material specifications
+11. Action or movement (if applicable)
+12. Aspect ratio (--ar 16:9, --ar 9:16, or --ar 1:1)
+13. Version (--niji 6 for anime and illustrative styles, or --v 6.1 for others)
+
+Example input:
+{
+"conceptOrObject": "Enchanted forest",
+}
+
+Example output:
+{
+"finalPrompt": "Enchanted forest, ancient gnarled trees with bioluminescent bark, dense misty woodland bathed in twilight hues, winding path leading to a hidden clearing, mysterious and magical atmosphere, digital painting style with rich textures, soft purple and blue color palette with hints of golden light, swirling fireflies creating trails of light, low angle view emphasizing towering trees, intricate root systems and moss-covered stones, gentle breeze rustling leaves, --ar 16:9 --v 6.1"
+}
+
+Your output should be a JSON object containing only the "finalPrompt" key and its corresponding value. Do not include any additional text or explanations outside of the JSON object. If the input is not in English, translate it before processing. Provide the output in English only.
+
+input:
+{
+"conceptOrObject": "${prompt}",
+}
+
+output:`
+      const result = await fetchCompletions(promptSendToAI);
       await sendMessage(session, `${parseOutputResultToGetFinalPrompt(result)}`);
     })
   // zyy* fy*
@@ -608,33 +574,34 @@ export function apply(ctx: Context, config: Config) {
   }
 
   async function translateChineseToEnglish(text: string): Promise<string> {
-    const json = {
-      "role": "Expert Chinese to English Translator",
-      "task": "Translate Chinese text to natural, fluent English",
-      "instructions": [
-        "Translate while accurately conveying the original tone, style, and cultural context.",
-        "Consider context for words with multiple meanings.",
-        "Use appropriate colloquialisms when present in the source.",
-        "Ensure grammatical correctness and natural flow.",
-        "Adapt wordplay to maintain the original spirit.",
-        "Use gender-neutral pronouns for animals unless specified.",
-        "Use parentheses for necessary clarifications."
-      ],
-      "input": {
-        "chineseText": text
-      },
-      "outputFormat": "JSON",
-      "outputStructure": {
-        "englishTranslation": "The translated English text. Exclude additional explanations or meta-commentary."
-      }
-    };
+    const prompt = `You are an Expert Chinese to English Translator. Your task is to translate Chinese text to natural, fluent English. Follow these instructions:
+
+1. Accurately convey the original tone, style, and cultural context.
+2. Consider context for words with multiple meanings.
+3. Use appropriate colloquialisms when present in the source.
+4. Ensure grammatical correctness and natural flow.
+5. Adapt wordplay to maintain the original spirit.
+6. Use gender-neutral pronouns for animals unless specified.
+7. Use parentheses for necessary clarifications.
+
+If the input text is already in English, return it as is without translation.
+
+Translate the following text:
+${text}
+
+Provide your response in JSON format with the following structure:
+{
+  "englishTranslation": "The translated English text or original English text if no translation was needed."
+}
+
+Do not include any additional explanations or meta-commentary outside of the JSON structure.`
 
     try {
-      const result = await fetchCompletions(JSON.stringify(json));
+      const result = await fetchCompletions(prompt);
       return parseOutputResultToGetEnglishTranslation(result);
     } catch (error) {
       logger.error('Translation error:', error);
-      return 'Translation failed.';
+      return text;
     }
   }
 
