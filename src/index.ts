@@ -100,8 +100,8 @@ interface Button {
 }
 
 interface ParsedOutput {
-  imaginePromptResult?: string;
-  english_translation?: string;
+  finalPrompt?: string;
+  englishTranslation?: string;
 }
 
 export function apply(ctx: Context, config: Config) {
@@ -110,7 +110,7 @@ export function apply(ctx: Context, config: Config) {
   // wj*
   const parameterListFilePath = path.join(__dirname, 'assets', '参数列表.png');
   const parameterListImgBuffer = fs.readFileSync(parameterListFilePath)
-  //tzb*
+  // tzb*
   ctx.database.extend('aiMidjourney', {
     id: 'unsigned',
     taskId: 'string',
@@ -184,46 +184,88 @@ export function apply(ctx: Context, config: Config) {
         return
       }
       const json = {
-        "task": "Generate a detailed Midjourney AI image prompt based on a given concept or object",
+        "task": "Generate a detailed Midjourney AI image prompt based on given inputs",
         "input": {
-          "conceptOrObject": prompt
+          "conceptOrObject": prompt,
+          "mood": "Desired mood or atmosphere",
+          "style": "Artistic style or medium",
+          "environment": "Setting or background",
+          "timeOfDay": "Time of day or lighting condition",
+          "additionalDetails": "Any extra details or elements"
         },
         "output": {
           "format": "JSON",
           "structure": {
             "conceptOrObject": "Input concept or object",
             "thinkStepByStep": [
-              "Step 1",
-              "Step 2",
-              "..."
+              "Step 1: Analyze the main concept or object",
+              "Step 2: Develop detailed description",
+              "Step 3: Incorporate environment and setting",
+              "Step 4: Define composition and framing",
+              "Step 5: Establish mood and atmosphere",
+              "Step 6: Determine artistic style and medium",
+              "Step 7: Add finishing touches and additional details"
             ],
-            "imaginePromptResult": "Final prompt string"
+            "promptComponents": {
+              "mainDescription": "Detailed description of the main concept or object",
+              "environment": "Description of the setting or background",
+              "composition": "Details about framing, perspective, and focus",
+              "mood": "Description of the mood, feelings, and atmosphere",
+              "style": "Artistic style, medium, or technique",
+              "additionalDetails": "Extra elements or specific instructions",
+              "technicalParameters": "Aspect ratio and version specifications"
+            },
+            "finalPrompt": "Complete, formatted prompt string"
           }
         },
         "guidelines": [
-          "Use vivid and specific language",
-          "Include details about appearance, environment, composition, mood, and style",
-          "Vary the focus and interpretation across the prompt",
-          "Avoid using 'description' or ':' in the prompts",
-          "Include one realistic photographic style with lens type and size",
+          "Use vivid, specific, and descriptive language",
+          "Incorporate sensory details (visual, auditory, tactile)",
+          "Balance broad concepts with specific details",
+          "Vary sentence structure and length for interest",
+          "Use metaphors or similes to enhance descriptions",
+          "Include unexpected or unique elements for creativity",
+          "Specify camera angles, distances, and perspectives for photographic styles",
+          "Mention lighting conditions, colors, and textures",
+          "Incorporate movement or action when appropriate",
+          "Avoid using 'description of' or colons in the prompts",
           "Write the prompt as a continuous string without line breaks"
         ],
         "promptStructure": [
-          "[1] Simple concept or object",
+          "[1] Main concept or object",
           "[2] Detailed description of [1]",
-          "[3] Scene environment",
-          "[4] Composition",
+          "[3] Environment and setting",
+          "[4] Composition and framing",
           "[5] Mood, feelings, and atmosphere",
-          "[6] Style (e.g., photography, painting, 3D)",
-          "[7] Additional mood or atmosphere details",
+          "[6] Artistic style or medium",
+          "[7] Lighting and color palette",
+          "[8] Additional elements or details",
+          "[9] Camera or perspective details (for photographic styles)",
+          "[10] Texture and material specifications",
+          "[11] Action or movement (if applicable)",
           "[ar] Aspect ratio (--ar 16:9, --ar 9:16, or --ar 1:1)",
-          "[v] Version (--niji 6 for Japanese style, or --v 6.1 for others)"
+          "[v] Version (--niji 6 for anime and illustrative styles, or --v 6.1 for others)"
         ],
-        "promptFormat": "[1], [2], [3], [4], [5], [6], [7], [ar] [v]",
-        "note": "If the input is not in English, translate it before processing. Output the JSON object in English only. Only JSON object, no additional text."
+        "promptFormat": "[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [ar] [v]",
+        "examples": [
+          {
+            "input": {
+              "conceptOrObject": "Enchanted forest",
+              "mood": "Mysterious and magical",
+              "style": "Digital painting",
+              "environment": "Dense woodland",
+              "timeOfDay": "Twilight",
+              "additionalDetails": "Glowing fireflies"
+            },
+            "output": {
+              "finalPrompt": "Enchanted forest, ancient gnarled trees with bioluminescent bark, dense misty woodland bathed in twilight hues, winding path leading to a hidden clearing, mysterious and magical atmosphere, digital painting style with rich textures, soft purple and blue color palette with hints of golden light, swirling fireflies creating trails of light, low angle view emphasizing towering trees, intricate root systems and moss-covered stones, gentle breeze rustling leaves, --ar 16:9 --v 6.1"
+            }
+          }
+        ],
+        "note": "If the input is not in English, translate it before processing. Output the JSON object in English only. Provide only the JSON object, no additional text."
       };
       const result = await fetchCompletions(JSON.stringify(json));
-      await sendMessage(session, `${parseOutputResultToGetImaginePromptResult(result)}`);
+      await sendMessage(session, `${parseOutputResultToGetFinalPrompt(result)}`);
     })
   // zyy* fy*
   ctx.command('aiMidjourney.中译英 <text:text>', '翻译中文到英文')
@@ -570,24 +612,21 @@ export function apply(ctx: Context, config: Config) {
       "role": "Expert Chinese to English Translator",
       "task": "Translate Chinese text to natural, fluent English",
       "instructions": [
-        "Maintain original tone and style",
-        "Adapt idioms and expressions",
-        "Preserve cultural nuances",
-        "Use brief parenthetical explanations if needed",
-        "Consider context for words with multiple meanings",
-        "Use appropriate colloquialisms when present in source",
-        "Ensure grammatical correctness and natural flow",
-        "Adapt wordplay to maintain original spirit",
-        "Use gender-neutral pronouns for animals unless specified"
+        "Translate while accurately conveying the original tone, style, and cultural context.",
+        "Consider context for words with multiple meanings.",
+        "Use appropriate colloquialisms when present in the source.",
+        "Ensure grammatical correctness and natural flow.",
+        "Adapt wordplay to maintain the original spirit.",
+        "Use gender-neutral pronouns for animals unless specified.",
+        "Use parentheses for necessary clarifications."
       ],
       "input": {
-        "chinese_text": text
+        "chineseText": text
       },
-      "output_format": "JSON",
-      "output_structure": {
-        "english_translation": "String containing only the translated text"
-      },
-      "notes": "Exclude additional explanations or meta-commentary in the output. Output the JSON object in English only. Only JSON object, no additional text."
+      "outputFormat": "JSON",
+      "outputStructure": {
+        "englishTranslation": "The translated English text. Exclude additional explanations or meta-commentary."
+      }
     };
 
     try {
@@ -659,12 +698,12 @@ export function apply(ctx: Context, config: Config) {
     }
   }
 
-  function parseOutputResultToGetImaginePromptResult(outputResult: string): string | undefined {
-    return parseOutputResult(outputResult).imaginePromptResult ?? outputResult;
+  function parseOutputResultToGetFinalPrompt(outputResult: string): string | undefined {
+    return parseOutputResult(outputResult).finalPrompt ?? outputResult;
   }
 
   function parseOutputResultToGetEnglishTranslation(outputResult: string): string | undefined {
-    return parseOutputResult(outputResult).english_translation ?? outputResult;
+    return parseOutputResult(outputResult).englishTranslation ?? outputResult;
   }
 
   async function convertUrlToBase64(url: string): Promise<string> {
@@ -677,45 +716,58 @@ export function apply(ctx: Context, config: Config) {
   }
 
   async function fetchCompletions(text) {
-    const url = 'https://sourcegraph.com/.api/graphql';
-    const token = "sgp_a0d7ccb4f752ea73_62464a2e9174c0d45f46f9885c742f5b53510030";
-
-    const query = `
-    query($input: CompletionsInput!) {
-      completions(input: $input)
-    }
-  `;
-
-    const variables = {
-      input: {
-        messages: [{text, speaker: "HUMAN"}],
-        temperature: 1,
-        maxTokensToSample: 4000,
-        topK: 50,
-        topP: 1
-      }
+    const json = {
+      "temperature": 1,
+      "topK": 50,
+      "topP": 0.9,
+      "model": "anthropic/claude-3-5-sonnet-20240620",
+      "maxTokensToSample": 4000,
+      "messages": [
+        {
+          "text": text,
+          "speaker": "human"
+        }
+      ]
     };
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch("https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=web&client-version=0.0.1", {
         method: 'POST',
         headers: {
-          'Authorization': `token ${token}`,
           'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+          "x-requested-with": "Sourcegraph",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0",
+          "x-sourcegraph-client": "https://sourcegraph.com",
+          "content-type": "application/json; charset=utf-8",
+          "origin": "https://sourcegraph.com",
+          "sec-fetch-site": "same-origin",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-dest": "empty",
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+          "priority": "u=1, i",
+          "cookie": "sourcegraphAnonymousUid=8bb096cb-663b-4643-929a-2b01c36c9e9e; sourcegraphCohortId=2024-07-29; sourcegraphDeviceId=8bb096cb-663b-4643-929a-2b01c36c9e9e; CookieConsent={stamp:%27-1%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27implied%27%2Cver:1%2Cutc:1722344152237%2Cregion:%27JP%27}; cody.survey.show=true; sourcegraphInsertId=2119af0c-e1d0-4191-852c-2300b7e9438b; sourcegraphSourceUrl=https://docs-legacy.sourcegraph.com/@v4.4.2/api; sourcegraphRecentSourceUrl=https://docs-legacy.sourcegraph.com/@v4.4.2/api; originalReferrer=https://www.bing.com/; ph_phc_GYC9gnJzJhbUMe7qIZPjMpTwAeF4kkC7AGAOXZgJ4pB_posthog=%7B%22distinct_id%22%3A%22019103b6-1a61-702d-99a9-084eb6be6a65%22%2C%22%24sesid%22%3A%5B1722770606869%2C%2201911d21-0714-7417-9e16-2ed61963ffd2%22%2C1722770589460%5D%7D; _cfuvid=DO8PwNqEjNqfHqG9hu1iooaxAhyYO.La3sYRuohrC7w-1723351350332-0.0.1.1-604800000; __cf_bm=2xEZUAPJz4QCrfqustoi36YIhKsYU9k4GErxe_Igqq8-1723354962-1.0.1.1-_bY5sHCATFyj__MskgujuH.CN3b8KGnLWwaSNsM89vSagXstZBBAgln5y2y6RuxfHVb0McWqlDURywjz8O_nbg; sgs=MTcyMzM1NTI2M3xOd3dBTkU5VFYxWk5SRk5JUjFCUE4wdENWMFJOVUVoRk5rUkpXa2RSTjBaU1RGUlVVREpXUzFSRU1rVk9RMEpTUlVNMVYxUklOMUU9fN9phG_JqwR7yw8m1kuiE_1dmZkNnmGSxLZvtgBCWvu7"
+
         },
-        body: JSON.stringify({query, variables}),
+        body: JSON.stringify(json)
       });
 
-      const data = await response.json();
+      const reader = response.body.getReader();
 
-      if (data.errors) {
-        throw new Error(data.errors.map(e => e.message).join(', '));
-      }
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
 
-      if (data.data && data.data.completions) {
-        return data.data.completions;
-      } else {
-        throw new Error('Unexpected response structure');
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data:') && line.includes('end_turn')) {
+            const data = JSON.parse(line.slice(5));
+            return data.completion;
+          }
+        }
       }
     } catch (error) {
       logger.error('Error:', error);
