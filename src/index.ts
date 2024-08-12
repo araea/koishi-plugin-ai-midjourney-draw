@@ -47,7 +47,7 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 | \`aiMidjourney.参数列表\`                   | Midjourney 参数列表            |
 | \`aiMidjourney.提示词生成器 <prompt>\`        | 生成提示词                      |
 | \`aiMidjourney.英译中 <prompt>\`           | 翻译英文到中文                    |
-| \`aiMidjourney.中译英 <prompt>\`           | 翻译中文到英文（\`智谱AI GLM-4-AirX\`） |
+| \`aiMidjourney.中译英 <prompt>\`           | 翻译中文到英文（\`智谱AI\`） |
 | \`aiMidjourney.提示词辅助工具\`                | 提示词辅助工具链接                  |
 | \`aiMidjourney.合并图片\`                   | 合并多张图片（最多5张）               |
 | \`aiMidjourney.缩短提示词 <prompt>\`         | 分析并缩短提示词                   |
@@ -694,7 +694,7 @@ Do not include any additional explanations or meta-commentary outside of the JSO
   async function fetchCompletions(text) {
     const json = {
       "temperature": 1,
-      "model": "glm-4-airx",
+      "model": "glm-4-flash",
       "max_tokens": 4095,
       "stream": false,
       "messages": [
