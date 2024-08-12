@@ -240,7 +240,7 @@ output:`
   // zyy* fy*
   ctx.command('aiMidjourney.中译英 <text:text>', '翻译中文到英文')
     .action(async ({session}, text) => {
-      if (session.event.message.quote && session.event.message.quote.content) {
+      if (!text && session.event.message.quote && session.event.message.quote.content) {
         text = session.event.message.quote.content
       }
       if (!text) {
@@ -257,7 +257,7 @@ output:`
   // fy* yyz*
   ctx.command('aiMidjourney.英译中 <prompt:text>', '翻译英文到中文')
     .action(async ({session}, prompt) => {
-      if (session.event.message.quote && session.event.message.quote.content) {
+      if (!prompt && session.event.message.quote && session.event.message.quote.content) {
         prompt = session.event.message.quote.content
       }
       if (!prompt) {
