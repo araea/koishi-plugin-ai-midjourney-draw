@@ -617,26 +617,33 @@ Do not include any additional explanations or meta-commentary outside of the JSO
     }
   }
 
-  function separatePromptWordsAndParameters(prompt: string): { prompt: string; params: string } {
-    if (typeof prompt !== 'string') {
+  function separatePromptWordsAndParameters(input: string): { prompt: string; params: string } {
+    if (typeof input !== 'string') {
       throw new Error('Input must be a string');
     }
 
-    const lastParamIndex = prompt.lastIndexOf('--');
+    const parts = input.split(' ');
 
-    if (lastParamIndex === -1) {
-      return {prompt: prompt.trim(), params: ''};
+    let promptParts: string[] = [];
+    let paramParts: string[] = [];
+    let isParam = false;
+
+    for (const part of parts) {
+      if (part.startsWith('--')) {
+        isParam = true;
+      }
+
+      if (isParam) {
+        paramParts.push(part);
+      } else {
+        promptParts.push(part);
+      }
     }
 
-    // 检查 "--" 是否在字符串的开头
-    if (lastParamIndex === 0) {
-      return {prompt: '', params: prompt.trim()};
-    }
+    const prompt = promptParts.join(' ').trim();
+    const params = paramParts.join(' ').trim();
 
-    const promptText = prompt.slice(0, lastParamIndex).trim();
-    const params = prompt.slice(lastParamIndex).trim();
-
-    return {prompt: promptText, params: params};
+    return {prompt, params};
   }
 
   function parseOutputResult(outputResult: string): ParsedOutput {
@@ -710,7 +717,7 @@ Do not include any additional explanations or meta-commentary outside of the JSO
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        'Authorization': 'Bearer 6cb933cef62c71921abae1d511184c3d.w2OraEpWLytNG1J1'
+          'Authorization': 'Bearer 6cb933cef62c71921abae1d511184c3d.w2OraEpWLytNG1J1'
         },
         body: JSON.stringify(json)
       });
