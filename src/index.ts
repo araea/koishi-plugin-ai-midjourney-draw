@@ -26,6 +26,7 @@ authorization: 'YOUR_AUTHORIZATION_CODE' // 替换为你的授权码
 
 3. **开始使用：**  在聊天中使用 \`aiMidjourney.绘图\` 命令即可开始绘图。
 
+- **如何获得图片种子：** 引用回复 \`seed\` 或 \`种子\` 即可。
 - **如何将 4 小图放大：** 引用回复数字 \`1/2/3/4\` 即可，可同时放大多张。善用引用哦！
 - **建议自行添加别名：** 例如，可以将 \`aiMidjourney.绘图\` 添加别名为 \`绘图\` 或 \`画图\`，以便更方便地使用。
 
@@ -108,7 +109,7 @@ export function apply(ctx: Context, config: Config) {
   // cl*
   const logger = ctx.logger('aiMidjourney')
   // wj*
-  const parameterListFilePath = path.join(__dirname, 'assets', '参数列表.png');
+  const parameterListFilePath = path.join(__dirname, 'assets', '参数列表.jpeg');
   const parameterListImgBuffer = fs.readFileSync(parameterListFilePath)
   // tzb*
   ctx.database.extend('aiMidjourney', {
@@ -184,7 +185,7 @@ export function apply(ctx: Context, config: Config) {
   // cslb*
   ctx.command('aiMidjourney.参数列表', 'Midjourney 参数列表')
     .action(async ({session}) => {
-      await sendMessage(session, h.image(parameterListImgBuffer, `image/png`))
+      await sendMessage(session, h.image(parameterListImgBuffer, `image/jpeg`))
     })
   // sctsc* sc*
   ctx.command('aiMidjourney.提示词生成器 <prompt:text>', '生成提示词')
