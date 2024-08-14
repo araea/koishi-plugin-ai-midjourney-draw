@@ -154,6 +154,15 @@ export function apply(ctx: Context, config: Config) {
           await session.execute(`aiMidjourney.放大 ${task.taskId} ${task.customIds[3]}`)
           isExecuted = true;
         }
+        if (content.includes('seed') || content.includes('种子')) {
+          const seed = await getSeed(task.taskId);
+          if (seed) {
+            await sendMessage(session, seed);
+          } else {
+            await sendMessage(session, '种子获取失败。');
+          }
+          isExecuted = true;
+        }
         if (isExecuted) {
           return;
         }
@@ -161,6 +170,7 @@ export function apply(ctx: Context, config: Config) {
     }
     return await next();
   }, true);
+  // zl*
   // aiMidjourney h* bz*
   ctx.command('aiMidjourney', 'aiMidjourney 帮助')
     .action(async ({session}) => {
@@ -444,9 +454,12 @@ output:`
     })
   // fd*
   ctx.command('aiMidjourney.放大 <taskId:string> <customId:string>', '放大图片', {hidden: true})
+    .usage(`此命令由插件自动调用，无需手动输入。`)
+    .usage(`请直接引用 4 小图，回复相应的数字序号即可，可同时输入多个。`)
     .action(async ({session}, taskId, customId) => {
       if (!taskId || !customId) {
-        return
+        return await sendMessage(session, `此命令由插件自动调用，无需手动输入。
+请直接引用 4 小图，回复相应的数字序号即可，可同时输入多个。`);
       }
       try {
         const newTaskId = await submitTask('action', {
@@ -565,6 +578,27 @@ output:`
     })
 
   // hs*
+  async function getSeed(taskId: string): Promise<string | null> {
+    const url = `https://draw.ai-mj.com/mjapi/mj/task/${taskId}/image-seed`;
+    const headers = {
+      "content-type": "application/json",
+      'Authorization': config.authorization,
+    };
+
+    try {
+      const response = await fetch(url, {headers});
+      if (response.ok) {
+        const {result} = await response.json();
+        return result;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      logger.error('Error get seed:', error);
+      return null;
+    }
+  }
+
   function getHeadImgUrls(atElements: Element[]): string[] {
     return atElements.map(element => {
       const atId = element.attrs.id;
