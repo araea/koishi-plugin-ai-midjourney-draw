@@ -529,10 +529,11 @@ output:`
         if (imageUrlsAndRestPrompt.imageUrls.length > 0) {
           ossUrls = ossUrls.concat(await processImageUrls(imageUrlsAndRestPrompt.imageUrls));
         }
-        prompt = `${translatedPrompt} ${promptAndParams.params}`;
+        prompt = normalizeParameters(`${translatedPrompt} ${promptAndParams.params}`);
       }
 
       prompt = ossUrls.length > 0 ? `${ossUrls.join(' ')} ${prompt}` : prompt;
+
       try {
         const taskId = await submitTask('imagine', {
             botType: "MID_JOURNEY",
@@ -579,6 +580,14 @@ output:`
     })
 
   // hs*
+  function normalizeParameters(inputString: string): string {
+    return inputString
+      .trim()
+      .replace(/--\s+/g, '--')
+      .replace(/\s+/g, ' ')
+      .replace(/--+/g, '--');
+  }
+
   async function getSeed(taskId: string): Promise<string | null> {
     const url = `https://draw.ai-mj.com/mjapi/mj/task/${taskId}/image-seed`;
     const headers = {
