@@ -1,6 +1,7 @@
 # koishi-plugin-ai-midjourney-draw
 
-[![npm](https://img.shields.io/npm/v/koishi-plugin-ai-midjourney-draw?style=flat-square)](https://www.npmjs.com/package/koishi-plugin-ai-midjourney-draw)
+[<img alt="github" src="https://img.shields.io/badge/github-araea/ai_midjourney_draw-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/araea/koishi-plugin-ai-midjourney-draw)
+[<img alt="npm" src="https://img.shields.io/npm/v/koishi-plugin-ai-midjourney-draw.svg?style=for-the-badge&color=fc8d62&logo=npm" height="20">](https://www.npmjs.com/package/koishi-plugin-ai-midjourney-draw)
 
 ## 简介
 
