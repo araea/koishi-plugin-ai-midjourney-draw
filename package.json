@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-ai-midjourney-draw",
   "description": "Koishi 的 MidjourneyAI 绘图（非官方）插件。25 元/月 无限绘图。",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -33,6 +33,9 @@
     "绘图"
   ],
   "peerDependencies": {
-    "koishi": "^4.18.0"
+    "koishi": "^4.18.7"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
   }
 }

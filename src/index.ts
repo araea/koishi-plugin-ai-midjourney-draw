@@ -1,7 +1,6 @@
 import {Context, h, Schema, Element} from 'koishi'
 import {} from '@koishijs/plugin-help'
-import path from "path";
-import fs from "fs";
+import sharp from 'sharp';
 
 export const name = 'ai-midjourney-draw'
 export const inject = {
@@ -50,6 +49,7 @@ export interface Config {
   autoTranslate: boolean
   timeoutDuration: number
   printProgress: boolean
+  isCompress: boolean
 }
 
 export const Config: Schema<Config> = Schema.object({
@@ -57,6 +57,7 @@ export const Config: Schema<Config> = Schema.object({
   autoTranslate: Schema.boolean().default(false).description('是否自动将中文提示词翻译成英文。'),
   timeoutDuration: Schema.number().default(10).description('任务超时时长（分钟）。'),
   printProgress: Schema.boolean().default(true).description('是否打印任务进度。'),
+  isCompress: Schema.boolean().default(false).description('是否压缩图片。'),
 })
 
 // smb*
@@ -90,9 +91,6 @@ interface ParsedOutput {
 export function apply(ctx: Context, config: Config) {
   // cl*
   const logger = ctx.logger('aiMidjourney')
-  // wj*
-  const parameterListFilePath = path.join(__dirname, 'assets', '参数列表.jpeg');
-  const parameterListImgBuffer = fs.readFileSync(parameterListFilePath)
   // tzb*
   ctx.database.extend('aiMidjourney', {
     id: 'unsigned',
@@ -155,10 +153,8 @@ export function apply(ctx: Context, config: Config) {
   }, true);
   // zl*
   // aiMidjourney h* bz*
-  ctx.command('aiMidjourney', 'aiMidjourney 帮助')
-    .action(async ({session}) => {
-      await session.execute(`aiMidjourney -h`)
-    })
+  ctx.command('aiMidjourney.a', 'aiMidjourney 帮助')
+
   // xgzy*
   ctx.command('aiMidjourney.相关资源', 'Midjourney 绘图相关资源')
     .action(async ({session}) => {
@@ -167,7 +163,7 @@ export function apply(ctx: Context, config: Config) {
   // cslb*
   ctx.command('aiMidjourney.参数列表', 'Midjourney 参数列表')
     .action(async ({session}) => {
-      await sendMessage(session, h.image(parameterListImgBuffer, `image/jpeg`))
+      await sendMessage(session, 'https://docs.midjourney.com/hc/en-us/articles/32859204029709-Parameter-List#h_01JFFYM0K9PDTTX1ZHJ1PJTWTR')
     })
   // sctsc* sc*
   ctx.command('aiMidjourney.提示词生成器 <prompt:text>', '生成提示词')
@@ -325,7 +321,12 @@ output:`
       await sendMessage(session, `已提交合并图片任务，请耐心等待。`);
       const result = await pollTaskResult(taskId);
       if (result.status === 'SUCCESS') {
-        const messageId = await sendMessage(session, `${h.image(result.imageUrl)}`);
+        let messageId = '';
+        if (config.isCompress) {
+          messageId = await sendMessage(session, `${await compressImage(result.imageUrl)}`);
+        } else {
+          messageId = await sendMessage(session, `${h.image(result.imageUrl)}`);
+        }
         await ctx.database.create('aiMidjourney', {
           messageId: messageId,
           taskId,
@@ -542,7 +543,12 @@ output:`
           if (config.printProgress) {
             logger.success(`Task ID: ${taskId} | Image URL: ${result.imageUrl}`);
           }
-          const messageId = await sendMessage(session, `${h.image(result.imageUrl)}`);
+          let messageId = '';
+          if (config.isCompress) {
+            messageId = await sendMessage(session, `${await compressImage(result.imageUrl)}`);
+          } else {
+            messageId = await sendMessage(session, `${h.image(result.imageUrl)}`);
+          }
           await ctx.database.create('aiMidjourney', {
             messageId: messageId,
             taskId,
@@ -562,6 +568,23 @@ output:`
     })
 
   // hs*
+  async function compressImage(imageUrl: string): Promise<string> {
+    const response = await fetch(imageUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
+
+    const compressedBuffer = await sharp(imageBuffer)
+      .jpeg({quality: 80})
+      .toBuffer();
+
+    return `${h.image(compressedBuffer, 'image/jpeg')}`;
+  }
+
   function normalizeParameters(inputString: string): string {
     return inputString
       .trim()
